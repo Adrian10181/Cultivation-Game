@@ -3,324 +3,648 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jade Heaven: Sovereign Edition</title>
+    <title>Jade Heaven: Ascendant Sovereign</title>
     <style>
-        :root { --realm-color: #d4af37; --glow: 0 0 10px #d4af37; }
+        :root { --realm-color: #d4af37; --glow: 0 0 10px #d4af37; --bg-overlay: rgba(0,0,0,0.7); }
         body { 
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://r.jina.ai/i/9e0e3b91c89047978935c102a9b3699c') no-repeat center center fixed; 
+            background: linear-gradient(var(--bg-overlay), var(--bg-overlay)), url('https://r.jina.ai/i/9e0e3b91c89047978935c102a9b3699c') no-repeat center center fixed; 
             background-size: cover; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             display: flex; justify-content: center; padding: 20px; margin: 0;
             overflow-x: hidden;
         }
         #game-box { 
             background: rgba(10, 15, 12, 0.95); backdrop-filter: blur(15px); 
-            border: 3px solid var(--realm-color); padding: 25px; width: 1100px; 
+            border: 3px solid var(--realm-color); padding: 25px; width: 100%; max-width: 1200px;
             border-radius: 15px; box-shadow: 0 0 50px #000; transition: all 1s ease;
-            position: relative;
+            position: relative; display: flex; flex-direction: column;
         }
-        .layout { display: grid; grid-template-columns: 280px 1fr 280px; gap: 20px; }
-        .panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr !important; }
+            #game-box { padding: 10px; }
+            h1 { font-size: 1.5rem; }
+        }
+
+        .layout { display: grid; grid-template-columns: 300px 1fr 300px; gap: 20px; }
+        .panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px; }
         h3 { color: var(--realm-color); border-bottom: 1px solid var(--realm-color); margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: var(--glow); }
         
-        #avatar-frame { width: 100%; height: 220px; border: 2px solid var(--realm-color); border-radius: 8px; overflow: hidden; margin-bottom: 10px; box-shadow: var(--glow); background: #000; }
+        #avatar-frame { width: 100%; height: 220px; border: 2px solid var(--realm-color); border-radius: 8px; overflow: hidden; margin-bottom: 10px; box-shadow: var(--glow); background: #000; position: relative;}
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
-        button { background: #1a261f; color: #ffd700; border: 1px solid #d4af37; padding: 10px; cursor: pointer; width: 100%; margin-top: 8px; font-weight: bold; transition: 0.2s; }
+        button { background: #1a261f; color: #ffd700; border: 1px solid #d4af37; padding: 8px; cursor: pointer; margin-top: 5px; font-weight: bold; transition: 0.2s; border-radius: 4px; }
         button:hover:not(:disabled) { background: var(--realm-color); color: #000; box-shadow: var(--glow); }
         button:disabled { opacity: 0.3; cursor: not-allowed; }
         
-        #log { height: 100px; overflow-y: auto; background: rgba(0,0,0,0.8); color: #00ff00; padding: 10px; font-size: 0.8rem; margin-top: 15px; border-radius: 5px; font-family: 'Courier New'; border-left: 3px solid var(--realm-color); }
+        #log { height: 150px; overflow-y: auto; background: rgba(0,0,0,0.8); color: #00ff00; padding: 10px; font-size: 0.8rem; margin-top: 15px; border-radius: 5px; font-family: 'Courier New'; border-left: 3px solid var(--realm-color); }
         .treasure-tag { display: inline-block; padding: 4px 10px; background: #2a0000; border: 1px solid #ff4444; font-size: 0.75rem; margin: 3px; border-radius: 4px; color: #ffcccc; }
-        progress { width: 100%; height: 12px; accent-color: var(--realm-color); margin: 10px 0; }
+        progress { width: 100%; height: 10px; accent-color: var(--realm-color); margin: 5px 0; }
         .stat-val { color: var(--realm-color); font-weight: bold; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
+        
+        /* Tabs */
+        .tab-container { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; padding: 10px; background: #111; border: 1px solid #444; color: #aaa; }
+        .tab-btn.active { background: var(--realm-color); color: #000; border-color: var(--realm-color); }
 
-        /* Battle Animations */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-        .battle-shake { animation: shake 0.5s; animation-iteration-count: infinite; }
-        .battle-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; opacity: 0; pointer-events: none; z-index: 100; }
+        /* Animations */
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-3px, -2px); } 100% { transform: translate(1px, 1px); } }
+        .battle-shake { animation: shake 0.5s infinite; }
+        .battle-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: white; opacity: 0; pointer-events: none; z-index: 100; transition: opacity 0.2s; }
+        
+        /* Bulk Hire Controls */
+        .hire-controls { display: flex; gap: 5px; margin-bottom: 5px; }
+        .hire-btn { padding: 4px; font-size: 0.7rem; flex: 1; }
+        .hire-btn.active { background: #4a6b52; border-color: #0f0; }
+
+        /* Popups / Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        .modal-content { background: #1a1a1a; padding: 20px; border: 2px solid var(--realm-color); width: 80%; max-width: 500px; border-radius: 10px; text-align: center; }
+        
+        /* Health Bar */
+        #hp-bar-container { width: 100%; background: #333; height: 15px; border-radius: 3px; margin-bottom: 5px; position: relative; }
+        #hp-bar { height: 100%; background: #ff4444; width: 100%; transition: width 0.2s; border-radius: 3px; }
+        #hp-text { position: absolute; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.7rem; line-height: 15px; text-shadow: 1px 1px #000; }
     </style>
 </head>
 <body>
+
+<div id="setup" style="position:fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 300; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <h1 style="color:#d4af37; text-shadow: 0 0 20px #d4af37; font-size: 4rem; margin-bottom: 20px;">JADE HEAVEN</h1>
+    <p style="color: #aaa; margin-bottom: 40px;">Ascendant Sovereign Edition</p>
+    <input type="text" id="player-name" placeholder="Enter Daoist Name" style="padding:15px; width:300px; background: #222; color: #ffd700; border: 1px solid #d4af37; border-radius: 5px; font-size: 1.2rem; text-align: center;">
+    <button onclick="startGame()" style="width:200px; margin-top: 30px; font-size: 1.2rem; padding: 15px;">Begin Path</button>
+</div>
+
 <div class="battle-flash" id="flash"></div>
-<div id="game-box">
-    <div id="setup" style="text-align:center; padding: 40px;">
-        <h1 style="color:#d4af37; text-shadow: 0 0 20px #d4af37;">JADE HEAVEN</h1>
-        <p>Your legend begins here.</p>
-        <input type="text" id="player-name" placeholder="Daoist Name..." style="padding:12px; width:250px; background: #000; color: #ffd700; border: 1px solid #d4af37; border-radius: 5px;">
-        <button onclick="startGame()" style="width:200px; margin-top: 20px;">Awaken Meridians</button>
+
+<div id="game-box" style="display:none;">
+    
+    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+        <h2 style="color: var(--realm-color); margin:0; font-size: 1.5rem;">Sect Master <span id="display-name">Daoist</span></h2>
+        <div style="display:flex; gap: 10px; font-size: 0.8rem; align-items: center;">
+            <span style="color: #aaa;">Plane: <b id="plane-display" style="color: #fff;">Mortal Realm</b></span>
+            <button onclick="saveGame()">Save</button>
+            <button onclick="deleteSave()" style="background: #4a0000; border-color: #ff4444;">Wipe</button>
+        </div>
     </div>
 
-    <div id="main-game" style="display:none;">
-        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h2 style="color: var(--realm-color); margin:0;">Sect Master <span id="display-name">Daoist</span></h2>
-            <div style="display:flex; gap: 10px;">
-                <button onclick="saveGame()" style="padding: 5px 10px; font-size: 0.7rem; width: auto;">Seal Save</button>
-                <button onclick="deleteSave()" style="padding: 5px 10px; font-size: 0.7rem; background: #4a0000; border-color: #ff4444; width: auto;">Shatter Save</button>
-                <div style="padding: 5px 10px; border: 1px solid var(--realm-color); border-radius: 5px; font-size: 0.8rem;">Karma: <span class="stat-val" id="karma-display">1.0</span>x</div>
-            </div>
-        </div>
+    <div class="layout">
         
-        <div class="layout">
+        <div class="column">
             <div class="panel">
-                <div id="avatar-frame">
-                    <img id="avatar-img" src="gamechar.jpg" alt="Sect Leader">
-                </div>
-                <h3>Cultivation</h3>
-                <div>Realm: <span id="realm" class="stat-val">Mortal</span></div>
-                <div>Qi: <span id="qi" class="stat-val">0</span> / <span id="qi-req" class="stat-val">0</span></div>
-                <progress id="qi-bar" value="0" max="100"></progress>
-                <div>Stones: <span id="stones" class="stat-val">0</span></div>
-                <button onclick="meditate()">Meditate (Gain Qi)</button>
-                <button onclick="mineStones()">Mine Spirit Stones (+10)</button>
-                <button id="bt-btn" style="display:none; background: #4a0000; border-color: #ff0000;" onclick="attemptBreakthrough()">ATTEMPT BREAKTHROUGH</button>
-            </div>
-
-            <div class="panel">
-                <h3>War Map (Sect Wars)</h3>
-                <div style="background: rgba(50, 0, 0, 0.4); border: 1px solid #ff4444; padding: 12px; border-radius: 8px;">
-                    <p id="target-sect" style="margin: 0 0 10px 0;">Target: <b>Green Bamboo Sect</b></p>
-                    <p style="font-size: 0.8rem;">Power Needed: <span id="sect-power-req" class="stat-val">1,000</span></p>
-                    <button id="war-btn" onclick="invadeSect()">Launch Invasion</button>
-                </div>
-
-                <h3 style="margin-top:20px;">Heavenly Treasures</h3>
-                <div id="treasures-list" style="min-height: 50px;">None collected yet.</div>
-
-                <h3 style="margin-top:20px;">World Boss</h3>
-                <div style="text-align: center; border: 1px solid var(--realm-color); padding: 10px; border-radius: 8px;">
-                    <p id="boss-name" style="color: #ff4444; font-weight: bold; margin: 5px 0;">...</p>
-                    <p style="font-size: 0.8rem;">Boss Power: <span id="boss-power" class="stat-val">?</span></p>
-                    <button id="boss-btn" onclick="challengeBoss()">Challenge Boss</button>
-                </div>
-            </div>
-
-            <div class="panel">
-                <h3>Sect Hall</h3>
-                <button onclick="recruit('disciple')">Outer Disciple (50s)</button>
-                <button onclick="recruit('elder')">Inner Elder (500s)</button>
-                <button onclick="recruit('array')">Array Grandmaster (2.5k)</button>
+                <div id="avatar-frame"><img id="avatar-img" src="gamechar.jpg" alt="Character"></div>
                 
-                <div style="margin-top:20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                    <div>Disciples: <span id="c-disciple" class="stat-val">0</span></div>
-                    <div>Elders: <span id="c-elder" class="stat-val">0</span></div>
-                    <div style="font-size: 1.1rem; margin-top: 10px;">Combat Power: <br><span id="power" style="font-size: 1.5rem; color: #ff4444; text-shadow: 0 0 5px #000;">0</span></div>
-                </div>
+                <div id="hp-bar-container"><div id="hp-bar"></div><div id="hp-text">Health: 100%</div></div>
+                <div class="stat-row"><span>Realm:</span> <span id="realm" class="stat-val">Mortal</span></div>
+                <div class="stat-row"><span>Qi:</span> <span id="qi" class="stat-val">0</span> / <span id="qi-req">100</span></div>
+                <progress id="qi-bar" value="0" max="100" style="width:100%"></progress>
                 
-                <div class="panel" style="background: rgba(70,0,0,0.3); border-color: #ff4444; margin-top: 20px;">
-                    <h3 style="border-bottom-color: #ff4444; color: #ff4444;">Reincarnation</h3>
-                    <p style="font-size: 0.7rem;">Gain +<span id="potential-karma">0</span> Karma</p>
-                    <button id="reborn-btn" onclick="reincarnate()" disabled>Reincarnate</button>
+                <hr style="border-color: #333;">
+                <div class="stat-row"><span>Strength (STR):</span> <span id="str">1</span></div>
+                <div class="stat-row"><span>Agility (AGI):</span> <span id="agi">1</span></div>
+                <div class="stat-row"><span>Intelligence (INT):</span> <span id="int">1</span></div>
+                <div class="stat-row"><span>Combat Power:</span> <span id="power" style="color:#ff4444; font-size:1.1rem;">0</span></div>
+                <div class="stat-row"><span>Spirit Stones:</span> <span id="stones" style="color:#ffd700;">0</span></div>
+                <div class="stat-row"><span>Karma:</span> <span id="karma-display">1.0</span>x</div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+                    <button onclick="meditate()">Meditate</button>
+                    <button onclick="mineStones()">Mine</button>
+                    <button onclick="explore()">Explore</button>
+                    <button id="bt-btn" style="grid-column: span 2; background: #4a0000; border-color: #ff0000; display:none;" onclick="attemptBreakthrough()">BREAKTHROUGH</button>
                 </div>
             </div>
         </div>
-        <div id="log">The Jade Heaven Sect awaits your command.</div>
+
+        <div class="column">
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchTab('sect')">Sect Hall</button>
+                <button class="tab-btn" onclick="switchTab('world')">World Map</button>
+                <button class="tab-btn" onclick="switchTab('shop')">City / Shop</button>
+            </div>
+
+            <div id="tab-sect" class="panel">
+                <h3>Sect Management</h3>
+                <div class="hire-controls">
+                    <button class="hire-btn active" onclick="setHireAmt(1)">x1</button>
+                    <button class="hire-btn" onclick="setHireAmt(10)">x10</button>
+                    <button class="hire-btn" onclick="setHireAmt(100)">x100</button>
+                    <button class="hire-btn" onclick="setHireAmt('MAX')">MAX</button>
+                </div>
+                
+                <div style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                    <div class="stat-row"><b>Disciple</b> (Stones: +2/s) <span id="cost-disciple">50</span>s</div>
+                    <div class="stat-row">Count: <span id="c-disciple" class="stat-val">0</span> <button onclick="recruit('disciple')" style="padding:2px 8px; font-size:0.8rem;">Hire</button></div>
+                </div>
+                <div style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                    <div class="stat-row"><b>Elder</b> (Qi: +5/s) <span id="cost-elder">500</span>s</div>
+                    <div class="stat-row">Count: <span id="c-elder" class="stat-val">0</span> <button onclick="recruit('elder')" style="padding:2px 8px; font-size:0.8rem;">Hire</button></div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <div class="stat-row"><b>Array Master</b> (Power x1.1) <span id="cost-array">2.5k</span>s</div>
+                    <div class="stat-row">Count: <span id="c-array" class="stat-val">0</span> <button onclick="recruit('array')" style="padding:2px 8px; font-size:0.8rem;">Hire</button></div>
+                </div>
+
+                <div class="panel" style="background: rgba(50,0,0,0.2); border-color: #ff4444; margin-top: 20px;">
+                    <h3 style="border-bottom-color: #ff4444; color: #ff4444;">Reincarnation</h3>
+                    <p style="font-size: 0.8rem;">Reset progress for Karma Multiplier.</p>
+                    <p style="font-size: 0.8rem;">Current Potential: +<span id="potential-karma">0</span></p>
+                    <button id="reborn-btn" onclick="reincarnate()" disabled style="width:100%;">Reincarnate</button>
+                </div>
+            </div>
+
+            <div id="tab-world" class="panel" style="display:none;">
+                <h3>War Map</h3>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <p id="target-sect" style="margin:0 0 5px 0; font-weight:bold;">Target: Green Bamboo Sect</p>
+                    <p style="font-size:0.8rem; margin:0;">Req Power: <span id="sect-req" class="stat-val">1000</span></p>
+                    <button onclick="invadeSect()" style="width:100%; margin-top:5px;">Invade</button>
+                </div>
+
+                <h3>World Boss</h3>
+                <div style="background: rgba(50,0,0,0.3); padding: 10px; border-radius: 5px; border: 1px solid #ff4444; text-align: center;">
+                    <p id="boss-name" style="font-weight:bold; color:#ff4444; margin:0;">Iron-Tusk Boar</p>
+                    <p style="font-size:0.8rem;">Power: <span id="boss-power">500</span></p>
+                    <button id="boss-btn" onclick="challengeBoss()">Challenge</button>
+                </div>
+
+                <h3>Dungeons</h3>
+                <div style="margin-top:10px;">
+                    <button onclick="enterDungeon('Spirit Cave')" style="width:100%;">Spirit Cave (Recommended: 5k Power)</button>
+                </div>
+            </div>
+
+            <div id="tab-shop" class="panel" style="display:none;">
+                <h3>City Auction</h3>
+                <p style="font-size:0.8rem; color:#aaa;">Rare items appear here randomly.</p>
+                <button onclick="refreshShop()">Refresh (100s)</button>
+                <div id="shop-items" style="margin-top:10px; display:grid; gap:5px;">
+                    </div>
+
+                <h3 style="margin-top:20px;">General Store</h3>
+                <button onclick="buyStat('str')">Train Strength (+1 STR) - <span id="cost-str">100</span>s</button>
+                <button onclick="buyStat('agi')">Train Agility (+1 AGI) - <span id="cost-agi">100</span>s</button>
+                <button onclick="buyStat('int')">Study Scrolls (+1 INT) - <span id="cost-int">100</span>s</button>
+                <button onclick="buyPotion()">Health Pill (+50% HP) - 50s</button>
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="panel">
+                <h3>Inventory / Treasures</h3>
+                <div id="treasures-list" style="min-height: 50px; font-size: 0.8rem;">None.</div>
+                
+                <h3>Inheritance</h3>
+                <div id="inheritance-list" style="font-size: 0.8rem; color: #aaa;">No ancient legacies found.</div>
+            </div>
+            
+            <div id="log">Welcome to the Path.</div>
+        </div>
+    </div>
+</div>
+
+<div id="event-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="modal-title" style="color:var(--realm-color)">Event Title</h2>
+        <p id="modal-desc">Event Description</p>
+        <button onclick="closeModal()">Close</button>
     </div>
 </div>
 
 <script>
-    let karma = 1.0;
-    let treasures = [];
+    // --- Game State ---
     let state = {
-        name: "Daoist", qi: 0, stones: 50, realmIdx: 0, bossIdx: 0, sectIdx: 0,
+        name: "Daoist",
+        realmIdx: 0,
+        qi: 0,
+        stones: 50,
+        hp: 100, maxHp: 100,
+        stats: { str: 1, agi: 1, int: 1 },
         counts: { disciple: 0, elder: 0, array: 0 },
-        realms: ["Qi Condensation", "Foundation Establishment", "Core Formation", "Nascent Soul", "Spirit Severing", "Void Refinement", "Mahayana", "Immortal Emperor"],
-        sects: [
-            { name: "Green Bamboo Sect", req: 1000, reward: "Jade Flute (+10% Qi)" },
-            { name: "Thunder Mountain", req: 8000, reward: "Lightning Orb (+20% Power)" },
-            { name: "Black Lotus Cult", req: 50000, reward: "Lotus Petal (+50% Stones)" },
-            { name: "Heavenly Sword Sect", req: 250000, reward: "Void Blade (+100% Power)" }
-        ],
-        bosses: [
-            { name: "Iron-Tusk Boar", power: 500 },
-            { name: "Shadow Assassin", power: 4000 },
-            { name: "Ancient Chimera", power: 25000 },
-            { name: "God-Killer Golem", power: 150000 },
-            { name: "Heavenly Will", power: 1000000 }
-        ]
+        sectIdx: 0,
+        bossIdx: 0,
+        plane: 0, // 0 = Mortal, 1 = Spiritual, 2 = Immortal, etc.
+        inventory: {}, // Stores treasure counts: { "Jade Flute": 1 }
+        inheritances: []
     };
+    
+    let karma = 1.0;
+    let hireAmt = 1;
+    
+    // --- Constants ---
+    const REALMS = ["Qi Condensation", "Foundation", "Core Formation", "Nascent Soul", "Spirit Severing", "Void", "Mahayana", "Immortal Emperor", "Ascended God"];
+    const PLANES = ["Mortal Realm", "Spiritual Realm", "Immortal Realm", "Divine Realm"];
+    
+    const SECTS = [
+        { name: "Green Bamboo", req: 1000, reward: "Jade Flute", effect: "Qi +10%" },
+        { name: "Iron Fist", req: 5000, reward: "Iron Manual", effect: "STR +5" },
+        { name: "Thunder Peak", req: 20000, reward: "Lightning Orb", effect: "Power +20%" },
+        { name: "Void Sect", req: 100000, reward: "Void Mirror", effect: "Stones +50%" }
+    ];
+
+    const BOSSES = [
+        { name: "Iron-Tusk Boar", power: 500, drop: "Boar Tusk" },
+        { name: "Spirit Wolf King", power: 3000, drop: "Wolf Core" },
+        { name: "Ancient Golem", power: 15000, drop: "Earth Essence" },
+        { name: "Demon Lord", power: 100000, drop: "Demon Blood" }
+    ];
+
+    const SHOP_ITEMS = [
+        { name: "Mystic Sword", type: "gear", cost: 1000, bonus: "str", val: 5 },
+        { name: "Spirit Armor", type: "gear", cost: 1500, bonus: "hp", val: 50 },
+        { name: "Ancient Scroll", type: "gear", cost: 2000, bonus: "int", val: 5 }
+    ];
+
+    // --- Core Functions ---
 
     function startGame() {
-        const nameInput = document.getElementById('player-name').value;
-        if (nameInput) state.name = nameInput;
+        let inputName = document.getElementById('player-name').value;
+        if(inputName) state.name = inputName;
         document.getElementById('display-name').innerText = state.name;
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('main-game').style.display = 'block';
+        document.getElementById('game-box').style.display = 'flex';
+        log("Your journey begins.");
         update();
-    }
-
-    function log(msg, color="#00ff00") {
-        const lb = document.getElementById('log');
-        lb.innerHTML = `<span style="color:${color}">> ${msg}</span><br>${lb.innerHTML}`;
     }
 
     function update() {
-        let req = (state.realmIdx + 1) * 300 * Math.pow(2.2, state.realmIdx);
+        // Calculations
+        let qiReq = (state.realmIdx + 1) * 200 * Math.pow(2.5, state.realmIdx);
+        let power = calculatePower();
+        let hpPercent = (state.hp / state.maxHp) * 100;
+
+        // UI Updates
+        document.getElementById('realm').innerText = REALMS[state.realmIdx];
         document.getElementById('qi').innerText = Math.floor(state.qi);
-        document.getElementById('qi-req').innerText = Math.floor(req);
-        document.getElementById('qi-bar').value = (state.qi / req) * 100;
+        document.getElementById('qi-req').innerText = Math.floor(qiReq);
+        document.getElementById('qi-bar').value = (state.qi / qiReq) * 100;
         document.getElementById('stones').innerText = Math.floor(state.stones);
-        document.getElementById('realm').innerText = state.realms[state.realmIdx] || "Supreme God";
+        
+        document.getElementById('hp-bar').style.width = hpPercent + "%";
+        document.getElementById('hp-text').innerText = Math.floor(state.hp) + " / " + state.maxHp;
+
+        document.getElementById('str').innerText = state.stats.str;
+        document.getElementById('agi').innerText = state.stats.agi;
+        document.getElementById('int').innerText = state.stats.int;
+        document.getElementById('power').innerText = Math.floor(power);
         document.getElementById('karma-display').innerText = karma.toFixed(2);
-        
-        let pwr = (state.realmIdx * 2500) + (state.counts.elder * 600) + (state.counts.disciple * 60);
-        if(treasures.includes("Lightning Orb (+20% Power)")) pwr *= 1.2;
-        if(treasures.includes("Void Blade (+100% Power)")) pwr *= 2.0;
-        document.getElementById('power').innerText = Math.floor(pwr);
-        
+        document.getElementById('plane-display').innerText = PLANES[state.plane];
+
+        // Sect Costs
+        document.getElementById('cost-disciple').innerText = 50 * Math.pow(1.1, state.counts.disciple).toFixed(0);
+        document.getElementById('cost-elder').innerText = 500 * Math.pow(1.1, state.counts.elder).toFixed(0);
+        document.getElementById('cost-array').innerText = 2500 * Math.pow(1.2, state.counts.array).toFixed(0);
+
         document.getElementById('c-disciple').innerText = state.counts.disciple;
         document.getElementById('c-elder').innerText = state.counts.elder;
-        
-        document.getElementById('bt-btn').style.display = (state.qi >= req) ? "block" : "none";
+        document.getElementById('c-array').innerText = state.counts.array;
+
+        // Buttons
+        document.getElementById('bt-btn').style.display = state.qi >= qiReq ? 'inline-block' : 'none';
         document.getElementById('reborn-btn').disabled = state.realmIdx < 3;
-        document.getElementById('potential-karma').innerText = (state.realmIdx * 0.5 + state.bossIdx).toFixed(1);
+        
+        let potKarma = (state.realmIdx * 0.5) + (state.bossIdx * 0.2) + (state.stats.int * 0.01);
+        document.getElementById('potential-karma').innerText = potKarma.toFixed(2);
 
-        const colors = ["#d4af37", "#4db8ff", "#9d4dff", "#ff4d4d", "#ffffff"];
-        let colorIdx = Math.min(Math.floor(state.realmIdx / 2), colors.length - 1);
-        document.documentElement.style.setProperty('--realm-color', colors[colorIdx]);
-        document.documentElement.style.setProperty('--glow', `0 0 10px ${colors[colorIdx]}`);
-
-        if(state.sectIdx < state.sects.length) {
-            document.getElementById('target-sect').innerHTML = `Target: <b>${state.sects[state.sectIdx].name}</b>`;
-            document.getElementById('sect-power-req').innerText = state.sects[state.sectIdx].req.toLocaleString();
+        // World Tab
+        if (state.sectIdx < SECTS.length) {
+            document.getElementById('target-sect').innerText = "Target: " + SECTS[state.sectIdx].name;
+            document.getElementById('sect-req').innerText = SECTS[state.sectIdx].req;
         } else {
-            document.getElementById('target-sect').innerText = "World Conquered!";
-            document.getElementById('war-btn').disabled = true;
+            document.getElementById('target-sect').innerText = "Sector Pacified";
         }
 
-        if(state.bossIdx < state.bosses.length) {
-            document.getElementById('boss-name').innerText = state.bosses[state.bossIdx].name;
-            document.getElementById('boss-power').innerText = state.bosses[state.bossIdx].power.toLocaleString();
+        if (state.bossIdx < BOSSES.length) {
+            document.getElementById('boss-name').innerText = BOSSES[state.bossIdx].name;
+            document.getElementById('boss-power').innerText = BOSSES[state.bossIdx].power;
         } else {
-            document.getElementById('boss-name').innerText = "All Bosses Slain!";
+            document.getElementById('boss-name').innerText = "Waiting for Ascension...";
+            document.getElementById('boss-power').innerText = "---";
         }
+        
+        renderTreasures();
     }
 
-    function meditate() { 
-        let bonus = treasures.includes("Jade Flute (+10% Qi)") ? 1.1 : 1.0;
-        state.qi += (10 + (state.realmIdx * 20)) * karma * bonus; 
-        update(); 
+    function calculatePower() {
+        let base = (state.stats.str * 10) + (state.stats.agi * 5) + (state.stats.int * 2);
+        let cultivation = (state.realmIdx * 500);
+        let army = (state.counts.elder * 50) + (state.counts.disciple * 5);
+        let multiplier = 1 + (state.counts.array * 0.1); // Array Masters boost TOTAL power by 10% each
+
+        // Treasure Multipliers
+        if (state.inventory["Lightning Orb"]) multiplier += (0.2 * state.inventory["Lightning Orb"]);
+        
+        return (base + cultivation + army) * multiplier;
     }
 
-    function mineStones() { 
-        let bonus = treasures.includes("Lotus Petal (+50% Stones)") ? 1.5 : 1.0;
-        state.stones += 10 * karma * bonus; 
-        update(); 
-    }
+    // --- Actions ---
 
-    function recruit(type) {
-        let costs = { disciple: 50, elder: 500, array: 2500 };
-        if (state.stones >= costs[type]) {
-            state.stones -= costs[type];
-            state.counts[type]++;
-            update();
-        } else { log("Insufficient Spirit Stones!", "red"); }
-    }
-
-    function invadeSect() {
-        let sect = state.sects[state.sectIdx];
-        let pwr = parseInt(document.getElementById('power').innerText);
-        if (pwr >= sect.req) {
-            treasures.push(sect.reward);
-            state.sectIdx++;
-            log(`Success! You conquered ${sect.name} and found ${sect.reward}!`, "gold");
-            renderTreasures();
-        } else { log("Your invasion force was decimated!", "red"); }
+    function meditate() {
+        let gain = (5 + (state.stats.int * 2) + (state.counts.elder * 2)) * karma;
+        if (state.inventory["Jade Flute"]) gain *= (1 + (0.1 * state.inventory["Jade Flute"]));
+        state.qi += gain;
         update();
     }
 
-    function challengeBoss() {
-        let boss = state.bosses[state.bossIdx];
-        let pwr = parseInt(document.getElementById('power').innerText);
-        let gameBox = document.getElementById('game-box');
-        let flash = document.getElementById('flash');
+    function mineStones() {
+        let gain = (10 + (state.stats.str * 1) + (state.counts.disciple * 1)) * karma;
+        if (state.inventory["Void Mirror"]) gain *= (1 + (0.5 * state.inventory["Void Mirror"]));
+        state.stones += gain;
+        update();
+    }
 
-        // Start Battle Animation
-        gameBox.classList.add('battle-shake');
-        flash.style.opacity = '0.5';
-        document.getElementById('boss-btn').disabled = true;
+    function explore() {
+        if (Math.random() < 0.3) {
+            let found = Math.floor(Math.random() * 50) + 10;
+            state.stones += found;
+            log(`Found ${found} Spirit Stones.`);
+        } else if (Math.random() < 0.1) {
+            triggerEvent("Lucky Encounter", "You found a rare herb! Health fully restored.");
+            state.hp = state.maxHp;
+        } else {
+            log("You found nothing but dust.");
+        }
+        update();
+    }
+
+    function setHireAmt(amt) {
+        hireAmt = amt;
+        document.querySelectorAll('.hire-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function recruit(type) {
+        let baseCost = 0;
+        let count = state.counts[type];
+        if (type === 'disciple') baseCost = 50;
+        if (type === 'elder') baseCost = 500;
+        if (type === 'array') baseCost = 2500;
         
-        log(`Engaging ${boss.name} in mortal combat...`, "orange");
+        let buyCount = 0;
+        let loop = (hireAmt === 'MAX') ? 1000 : hireAmt;
 
-        setTimeout(() => {
-            gameBox.classList.remove('battle-shake');
-            flash.style.opacity = '0';
-            document.getElementById('boss-btn').disabled = false;
+        for (let i = 0; i < loop; i++) {
+            let cost = baseCost * Math.pow(1.1, state.counts[type]); // 10% increase per unit
+            if (type === 'array') cost = baseCost * Math.pow(1.2, state.counts[type]); // Higher scaling for arrays
 
-            if (pwr >= boss.power) {
-                state.stones += boss.power;
-                state.bossIdx++;
-                log(`VICTORY! You defeated ${boss.name}. Looted ${boss.power} stones.`, "gold");
+            if (state.stones >= cost) {
+                state.stones -= cost;
+                state.counts[type]++;
+                buyCount++;
             } else {
-                state.qi *= 0.5;
-                log(`DEFEAT! ${boss.name} crushed your cultivation. Lost 50% Qi.`, "red");
+                break;
             }
-            update();
-        }, 1500);
+        }
+        
+        if (buyCount > 0) log(`Recruited ${buyCount} ${type}(s).`);
+        else log("Not enough Spirit Stones.");
+        update();
     }
 
     function attemptBreakthrough() {
         state.realmIdx++;
         state.qi = 0;
-        log(`ASCENDED: You are now at the ${state.realms[state.realmIdx]} realm!`, "cyan");
+        state.maxHp += 100;
+        state.hp = state.maxHp;
+        state.stats.str += 10; 
+        state.stats.agi += 10; 
+        state.stats.int += 10;
+        log(`BREAKTHROUGH SUCCESS! Reached ${REALMS[state.realmIdx]}.`);
+        
+        // Ascension Check
+        if (state.realmIdx >= REALMS.length - 1) {
+            triggerEvent("Ascension", "You have reached the peak of this plane! Prepare to ascend to a higher realm...");
+            state.plane++;
+            state.realmIdx = 0; // Reset realms but keep stats? (Simple version: just reset realm name index offset)
+            // Implementation of planes can be complex; for now, let's just loop realms with higher difficulty?
+            // Or just unlock the next plane features.
+        }
         update();
     }
 
-    function reincarnate() {
-        karma += (state.realmIdx * 0.5 + state.bossIdx);
-        state.qi = 0; state.stones = 50; state.realmIdx = 0; state.bossIdx = 0; state.sectIdx = 0;
-        state.counts = {disciple:0, elder:0, array:0};
-        log("REBIRTH: You return to the mortal world with supreme talent.");
+    // --- Combat & World ---
+
+    function invadeSect() {
+        let sect = SECTS[state.sectIdx];
+        if (calculatePower() >= sect.req) {
+            addItem(sect.reward);
+            state.sectIdx++;
+            log(`Conquered ${sect.name}! Obtained ${sect.reward}.`);
+        } else {
+            log("Defeat! Your army retreated.");
+            state.hp -= 20; // Take damage
+        }
+        update();
+    }
+
+    function challengeBoss() {
+        let boss = BOSSES[state.bossIdx];
+        let pwr = calculatePower();
+        
+        // Visuals
+        document.getElementById('game-box').classList.add('battle-shake');
+        document.getElementById('flash').style.opacity = 0.5;
+        
+        setTimeout(() => {
+            document.getElementById('game-box').classList.remove('battle-shake');
+            document.getElementById('flash').style.opacity = 0;
+            
+            if (pwr >= boss.power) {
+                state.bossIdx++;
+                state.stones += boss.power * 2;
+                addItem(boss.drop); // Add item (incremental if exists)
+                log(`Slain ${boss.name}! Looted ${boss.drop}.`);
+            } else {
+                state.hp = 1;
+                log(`Crushing Defeat against ${boss.name}. You barely escaped.`);
+            }
+            update();
+        }, 800);
+    }
+
+    function enterDungeon(name) {
+        if (state.hp < 50) { log("Too injured to enter dungeon."); return; }
+        log(`Entering ${name}...`);
+        // Simple RNG dungeon
+        setTimeout(() => {
+            if (Math.random() > 0.4) {
+                let loot = Math.floor(Math.random() * 500);
+                state.stones += loot;
+                log(`Dungeon cleared! Found ${loot} stones.`);
+            } else {
+                state.hp -= 30;
+                log("Ambushed by traps! Took damage.");
+            }
+            update();
+        }, 1000);
+    }
+
+    // --- Items & Inventory ---
+
+    function addItem(name) {
+        if (state.inventory[name]) {
+            state.inventory[name]++;
+        } else {
+            state.inventory[name] = 1;
+        }
         update();
     }
 
     function renderTreasures() {
-        const list = document.getElementById('treasures-list');
-        list.innerHTML = treasures.map(t => `<span class="treasure-tag">${t}</span>`).join("");
+        let html = "";
+        for (let [item, count] of Object.entries(state.inventory)) {
+            html += `<span class="treasure-tag">${item} x${count}</span> `;
+        }
+        if (html === "") html = "None.";
+        document.getElementById('treasures-list').innerHTML = html;
     }
 
-    function saveGame() {
-        localStorage.setItem('jadeHeavenFullSave', JSON.stringify({state, karma, treasures}));
-        log("Game State Sealed.", "white");
-    }
-
-    function deleteSave() {
-        if(confirm("Are you sure you want to shatter your cultivation? This will delete all save data forever.")) {
-            localStorage.removeItem('jadeHeavenFullSave');
-            location.reload();
+    // --- Shop ---
+    function refreshShop() {
+        if(state.stones >= 100) {
+            state.stones -= 100;
+            let shopHTML = "";
+            // Pick 3 random items
+            for(let i=0; i<3; i++) {
+                let item = SHOP_ITEMS[Math.floor(Math.random() * SHOP_ITEMS.length)];
+                shopHTML += `<div style="border:1px solid #444; padding:5px; margin-bottom:5px; display:flex; justify-content:space-between;">
+                    <span>${item.name} (+${item.val} ${item.bonus.toUpperCase()})</span>
+                    <button onclick="buyItem('${item.name}', ${item.cost}, '${item.bonus}', ${item.val})" style="font-size:0.7rem;">${item.cost}s</button>
+                </div>`;
+            }
+            document.getElementById('shop-items').innerHTML = shopHTML;
+            update();
         }
     }
 
-    // Auto-load
-    const saved = localStorage.getItem('jadeHeavenFullSave');
-    if(saved) {
-        const data = JSON.parse(saved);
-        state = data.state; karma = data.karma; treasures = data.treasures;
-        renderTreasures();
-        startGame(); 
+    function buyItem(name, cost, bonusType, val) {
+        if (state.stones >= cost) {
+            state.stones -= cost;
+            state.stats[bonusType] += val;
+            if(bonusType === 'hp') state.maxHp += val;
+            log(`Bought ${name}.`);
+            update();
+        } else {
+            log("Not enough stones.");
+        }
     }
 
-    // Passive Generation
+    function buyStat(stat) {
+        let cost = 100 * Math.pow(1.2, state.stats[stat]); // cost scaling
+        if (state.stones >= cost) {
+            state.stones -= cost;
+            state.stats[stat]++;
+            log(`Trained ${stat.toUpperCase()}.`);
+            update();
+        }
+    }
+    
+    function buyPotion() {
+        if (state.stones >= 50) {
+            state.stones -= 50;
+            state.hp = Math.min(state.maxHp, state.hp + (state.maxHp * 0.5));
+            log("Consumed Health Pill.");
+            update();
+        }
+    }
+
+    // --- System ---
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        document.getElementById('tab-sect').style.display = 'none';
+        document.getElementById('tab-world').style.display = 'none';
+        document.getElementById('tab-shop').style.display = 'none';
+        
+        document.getElementById('tab-' + tab).style.display = 'block';
+    }
+
+    function log(msg) {
+        let d = new Date();
+        let time = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+        let el = document.getElementById('log');
+        el.innerHTML = `<span style="color:#aaa">[${time}]</span> ${msg}<br>` + el.innerHTML;
+    }
+
+    function reincarnate() {
+        if (confirm("Reset progress to gain Karma? Treasures and Stats will be lost.")) {
+            let potKarma = (state.realmIdx * 0.5) + (state.bossIdx * 0.2) + (state.stats.int * 0.01);
+            karma += potKarma;
+            
+            // Hard Reset (keep karma, plane?)
+            state.realmIdx = 0;
+            state.qi = 0;
+            state.stones = 50;
+            state.hp = 100; state.maxHp = 100;
+            state.stats = { str: 1, agi: 1, int: 1 };
+            state.counts = { disciple: 0, elder: 0, array: 0 };
+            state.sectIdx = 0;
+            state.bossIdx = 0;
+            state.inventory = {};
+            
+            log(`Reincarnation Complete! Karma is now ${karma.toFixed(2)}x.`);
+            update();
+        }
+    }
+
+    function saveGame() {
+        localStorage.setItem('jadeAscendantSave', JSON.stringify({state, karma}));
+        log("Game Saved.");
+    }
+
+    function deleteSave() {
+        if(confirm("WIPE SAVE DATA? This cannot be undone.")) {
+            localStorage.removeItem('jadeAscendantSave');
+            location.reload();
+        }
+    }
+    
+    // Event System
+    function triggerEvent(title, desc) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-desc').innerText = desc;
+        document.getElementById('event-modal').style.display = 'flex';
+    }
+    function closeModal() {
+        document.getElementById('event-modal').style.display = 'none';
+    }
+
+    // Loop
     setInterval(() => {
-        let stoneBonus = treasures.includes("Lotus Petal (+50% Stones)") ? 1.5 : 1.0;
-        let qiBonus = treasures.includes("Jade Flute (+10% Qi)") ? 1.1 : 1.0;
-        state.stones += (state.counts.disciple * 2 * karma * stoneBonus);
-        state.qi += (state.counts.elder * 15 * karma * qiBonus);
+        // Passive Income
+        let stoneIncome = state.counts.disciple * 2 * karma;
+        if(state.inventory["Void Mirror"]) stoneIncome *= (1 + (0.5 * state.inventory["Void Mirror"]));
+        
+        let qiIncome = state.counts.elder * 5 * karma;
+        
+        state.stones += stoneIncome;
+        state.qi += qiIncome;
+        
+        // Passive Healing (if Array Masters exist)
+        if (state.counts.array > 0 && state.hp < state.maxHp) {
+            state.hp += state.counts.array * 1;
+            if(state.hp > state.maxHp) state.hp = state.maxHp;
+        }
+
         update();
     }, 1000);
 
-    update();
+    // Load
+    const saved = localStorage.getItem('jadeAscendantSave');
+    if(saved) {
+        let data = JSON.parse(saved);
+        state = data.state;
+        karma = data.karma;
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('game-box').style.display = 'flex';
+        log("Welcome back, Daoist.");
+        update();
+    }
+
 </script>
 </body>
 </html>
