@@ -31,7 +31,7 @@
         h3 { color: var(--realm-color); border-bottom: 1px solid var(--realm-color); margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; text-shadow: var(--glow); }
         
         #avatar-frame { width: 100%; height: 220px; border: 2px solid var(--realm-color); border-radius: 8px; overflow: hidden; margin-bottom: 10px; box-shadow: var(--glow); background: #000; position: relative;}
-        #avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        #avatar-img { width: 100%; height: 100%; object-fit: contain; background: #111; }
 
         button { background: #1a261f; color: #ffd700; border: 1px solid #d4af37; padding: 8px; cursor: pointer; margin-top: 5px; font-weight: bold; transition: 0.2s; border-radius: 4px; }
         button:hover:not(:disabled) { background: var(--realm-color); color: #000; box-shadow: var(--glow); }
@@ -94,7 +94,7 @@
         
         <div class="column">
             <div class="panel">
-                <div id="avatar-frame"><img id="avatar-img" src="gamechar.jpg" alt="Character"></div>
+                <div id="avatar-frame"><img id="avatar-img" src="image_ff7109.png" alt="Character"></div>
                 
                 <div id="hp-bar-container"><div id="hp-bar"></div><div id="hp-text">Health: 100%</div></div>
                 <div class="stat-row"><span>Realm:</span> <span id="realm" class="stat-val">Mortal</span></div>
@@ -237,6 +237,19 @@
     const REALMS = ["Qi Condensation", "Foundation", "Core Formation", "Nascent Soul", "Spirit Severing", "Void", "Mahayana", "Immortal Emperor", "Ascended God"];
     const PLANES = ["Mortal Realm", "Spiritual Realm", "Immortal Realm", "Divine Realm"];
     
+    // IMAGE MAPPING: Maps Realm Index to Filename
+    const REALM_IMAGES = [
+        "image_ff7109.png", // 0: Qi Condensation
+        "image_09532f.png", // 1: Foundation
+        "image_0953a8.png", // 2: Core Formation
+        "image_09541f.png", // 3: Nascent Soul
+        "image_0956ee.png", // 4: Spirit Severing
+        "image_095746.png", // 5: Void
+        "image_095789.png", // 6: Mahayana
+        "image_095801.png", // 7: Immortal Emperor
+        "image_095aed.png"  // 8: Ascended God
+    ];
+
     const SECTS = [
         { name: "Green Bamboo", req: 1000, reward: "Jade Flute", effect: "Qi +10%" },
         { name: "Iron Fist", req: 5000, reward: "Iron Manual", effect: "STR +5" },
@@ -277,6 +290,13 @@
 
         // UI Updates
         document.getElementById('realm').innerText = REALMS[state.realmIdx];
+        
+        // --- DYNAMIC IMAGE UPDATE ---
+        // Sets image based on Realm Index. Falls back to original gamechar if index out of bounds.
+        let currentImage = REALM_IMAGES[state.realmIdx] || "gamechar.jpg";
+        document.getElementById('avatar-img').src = currentImage;
+        // ----------------------------
+
         document.getElementById('qi').innerText = Math.floor(state.qi);
         document.getElementById('qi-req').innerText = Math.floor(qiReq);
         document.getElementById('qi-bar').value = (state.qi / qiReq) * 100;
