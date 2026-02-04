@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jade Heaven: Ultimate Sovereign</title>
     <style>
-        :root { --realm-color: #d4af37; --demonic-color: #8a0000; --glow: 0 0 10px #d4af37; --bg-overlay: rgba(0,0,0,0.8); }
+        :root { --realm-color: #d4af37; --demonic-color: #8a0000; --glow: 0 0 10px #d4af37; --bg-overlay: rgba(0,0,0,0.85); }
         body { 
             background: linear-gradient(var(--bg-overlay), var(--bg-overlay)), url('https://r.jina.ai/i/9e0e3b91c89047978935c102a9b3699c') no-repeat center center fixed; 
             background-size: cover; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -16,6 +16,7 @@
             background: rgba(10, 15, 12, 0.95); backdrop-filter: blur(15px); 
             border: 2px solid var(--realm-color); padding: 15px; width: 100%; max-width: 1300px;
             border-radius: 10px; box-shadow: 0 0 50px #000; display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
         }
 
         /* Layout Grid */
@@ -52,15 +53,21 @@
         
         /* Specific Styles */
         .npc-card { border: 1px solid #555; padding: 8px; margin-bottom: 5px; background: rgba(0,0,0,0.3); }
-        .npc-demonic { border-color: var(--demonic-color); color: #ffaaaa; }
+        .companion-card { border: 1px solid #ff69b4; padding: 10px; margin-bottom: 5px; background: rgba(50, 0, 20, 0.4); border-radius: 5px; }
         .meridian-node { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; background: #222; }
         .meridian-active { border-color: #0ff; background: #004444; box-shadow: 0 0 5px #0ff; }
         
         /* Animations */
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-3px, -2px); } 100% { transform: translate(1px, 1px); } }
         .battle-shake { animation: shake 0.4s infinite; }
-        .flash { animation: flash 0.5s; }
-        @keyframes flash { 0% { background: rgba(255,255,255,0.8); } 100% { background: transparent; } }
+        
+        /* Golden Breakthrough Effect */
+        @keyframes gold-burst {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); background-color: rgba(255, 215, 0, 0); }
+            10% { box-shadow: 0 0 100px 50px rgba(255, 215, 0, 0.8); background-color: rgba(255, 215, 0, 0.2); }
+            100% { box-shadow: 0 0 200px 100px rgba(255, 215, 0, 0); background-color: rgba(255, 215, 0, 0); }
+        }
+        .level-up-anim { animation: gold-burst 1.5s ease-out; }
     </style>
 </head>
 <body>
@@ -177,6 +184,11 @@
 
             <div id="tab-social" class="game-tab" style="display:none;">
                 <div class="panel">
+                    <h3>Dao Companions</h3>
+                    <button onclick="seekCompanion()" style="width:100%; margin-bottom:10px;">Seek Companion (Cost: 5000s)</button>
+                    <div id="companion-list"></div>
+                </div>
+                <div class="panel">
                     <h3>Encounters</h3>
                     <button onclick="findNPC()" style="width:100%; margin-bottom:10px;">Search for People (Cost: 100s)</button>
                     <div id="npc-list"></div>
@@ -220,10 +232,6 @@
                         <p style="font-size:0.8rem; margin:5px;">Power: <span id="boss-power">500</span> | Element: <span id="boss-elem">Earth</span></p>
                         <button onclick="fightBoss()">Challenge</button>
                     </div>
-                </div>
-                <div class="panel">
-                    <h3>Bounty Board</h3>
-                    <div id="bounty-list"></div>
                 </div>
             </div>
 
@@ -282,7 +290,13 @@ const CONFIG = {
         {name: "Heavenly Guardian", power: 1000000, elem: "Light", drop: "Divine Shard"}
     ],
     herbs: ["Spirit Grass", "Ginseng", "Fire Flower", "Ice Lotus"],
-    npcs: ["Citizen", "Noble", "Merchant", "Alchemist", "Blacksmith", "Sect Disciple", "Rogue Cultivator", "Demonic Cultivator", "Supreme Elder"]
+    npcs: ["Citizen", "Noble", "Merchant", "Alchemist", "Blacksmith", "Sect Disciple", "Rogue Cultivator", "Demonic Cultivator", "Supreme Elder"],
+    companions: [
+        { name: "Jade Fox Spirit", buff: "AGI +10", type: "agi", val: 10 },
+        { name: "Phoenix Saintess", buff: "Qi Gain +20%", type: "qi", val: 0.2 },
+        { name: "Sword Empress", buff: "STR +15", type: "str", val: 15 },
+        { name: "Dragon Princess", buff: "HP +500", type: "hp", val: 500 }
+    ]
 };
 
 /* ================= GAME STATE ================= */
@@ -294,7 +308,8 @@ let state = {
     army: { disciple: 0, elder: 0, array: 0, loyalty: 100 },
     inventory: {},
     garden: [],
-    meridians: [false, false, false, false, false], // 5 simple meridians
+    meridians: [false, false, false, false, false],
+    companions: [],
     beast: null,
     library: false,
     achievements: [],
@@ -329,6 +344,12 @@ function updateGame() {
     // Passive Generation
     let stoneGain = (state.army.disciple * 2 * state.stats.karma);
     let qiGain = (state.army.elder * 5 * state.stats.karma);
+    
+    // Apply Companion Buffs (Qi)
+    state.companions.forEach(c => {
+        if(c.type === 'qi') qiGain *= (1 + c.val);
+    });
+
     if(state.library) qiGain *= 1.2;
     
     state.resources.stones += stoneGain;
@@ -387,7 +408,7 @@ function updateUI() {
     document.getElementById('int-val').innerText = state.stats.int;
     document.getElementById('power-val').innerText = calculatePower();
 
-    // Army (The Fix)
+    // Army
     document.getElementById('cnt-disciple').innerText = state.army.disciple;
     document.getElementById('cnt-elder').innerText = state.army.elder;
     document.getElementById('cnt-array').innerText = state.army.array;
@@ -414,6 +435,7 @@ function updateUI() {
 
     renderInventory();
     renderGarden();
+    renderCompanions();
 }
 
 function getCost(base, count) {
@@ -422,6 +444,13 @@ function getCost(base, count) {
 
 function calculatePower() {
     let base = (state.stats.str * 10) + (state.stats.agi * 5) + (state.stats.int * 2);
+    
+    // Apply Companion Buffs (Stats)
+    state.companions.forEach(c => {
+        if(c.type === 'str') base += c.val;
+        if(c.type === 'agi') base += c.val;
+    });
+
     let cultivation = state.progression.realmIdx * 1000;
     let army = (state.army.disciple * 2) + (state.army.elder * 20) + (state.army.array * 100);
     let art = state.progression.artifactLv * 500;
@@ -432,7 +461,6 @@ function calculatePower() {
 function meditate() {
     let gain = (5 + state.stats.int + (state.army.elder * 2)) * state.stats.karma;
     state.resources.qi += gain;
-    // Dao Heart regen
     if(state.resources.daoHeart < 100) state.resources.daoHeart += 0.5;
     updateUI();
 }
@@ -444,7 +472,6 @@ function explore() {
         state.resources.stones += found;
         log("Found " + found + " Spirit Stones.");
     } else if (roll < 0.45) {
-        // Find Herb seed
         let herb = CONFIG.herbs[Math.floor(Math.random() * CONFIG.herbs.length)];
         if(state.garden.length < 4) {
             state.garden.push({name: herb, progress: 0});
@@ -453,7 +480,6 @@ function explore() {
             log("Found seed, but garden is full.");
         }
     } else if (roll < 0.5) {
-        // Monster encounter damage
         state.resources.hp -= 10;
         log("Attacked by a wild beast! Took 10 dmg.", "red");
     } else {
@@ -472,15 +498,63 @@ function attemptBreakthrough() {
         }
     }
     
+    // VISUAL EFFECT RESTORED
+    let box = document.getElementById('game-box');
+    box.classList.add('level-up-anim');
+    setTimeout(() => box.classList.remove('level-up-anim'), 1500);
+
     state.progression.realmIdx++;
     state.resources.qi = 0;
     state.resources.maxHp += 200;
     state.resources.hp = state.resources.maxHp;
     state.stats.str += 10; state.stats.agi += 10; state.stats.int += 10;
     
-    flashScreen();
     log("BREAKTHROUGH SUCCESSFUL! Welcome to " + CONFIG.realms[state.progression.realmIdx], "gold");
     updateUI();
+}
+
+/* ================= COMPANIONS ================= */
+function seekCompanion() {
+    if(state.resources.stones < 5000) return log("Need 5000 stones.");
+    state.resources.stones -= 5000;
+    
+    if(Math.random() > 0.5) {
+        let possible = CONFIG.companions.filter(c => !state.companions.some(sc => sc.name === c.name));
+        if(possible.length > 0) {
+            let newComp = possible[Math.floor(Math.random() * possible.length)];
+            state.companions.push(newComp);
+            log("You met the " + newComp.name + "! They joined you.", "pink");
+            
+            // Apply immediate HP buff if applicable
+            if(newComp.type === 'hp') state.resources.maxHp += newComp.val;
+        } else {
+            log("You didn't find anyone new.");
+        }
+    } else {
+        log("You searched but found no one.");
+    }
+    updateUI();
+}
+
+function dualCultivate(idx) {
+    // Basic dual cultivation logic
+    state.resources.qi += 500;
+    state.resources.daoHeart = Math.min(100, state.resources.daoHeart + 10);
+    log("Dual Cultivated with " + state.companions[idx].name + ". Qi +500, Dao Heart +10.", "pink");
+    updateUI();
+}
+
+function renderCompanions() {
+    let div = document.getElementById('companion-list');
+    div.innerHTML = "";
+    state.companions.forEach((c, i) => {
+        div.innerHTML += `<div class="companion-card">
+            <strong>${c.name}</strong><br>
+            <span style="font-size:0.75rem; color:#aaa;">Bonus: ${c.buff}</span><br>
+            <button onclick="dualCultivate(${i})" style="margin-top:5px; font-size:0.7rem; background:#400; border-color:#f66;">Dual Cultivate</button>
+        </div>`;
+    });
+    if(state.companions.length === 0) div.innerHTML = "<div style='font-size:0.8rem; color:#888;'>No companions yet.</div>";
 }
 
 /* ================= SECT MANAGEMENT ================= */
@@ -602,7 +676,7 @@ function brewPill() {
     state.inventory[h2]--;
     
     state.stats.int += 2;
-    state.stats.reputation += 1; // Alchemy increases fame
+    state.stats.reputation += 1; 
     log("Alchemy Success! Intelligence +2.", "gold");
     updateUI();
 }
@@ -622,7 +696,7 @@ function fightBoss() {
     if(!boss) return;
     
     let pwr = calculatePower() + (state.tempDmg || 0);
-    state.tempDmg = 0; // Reset active skill
+    state.tempDmg = 0; 
     
     document.getElementById('game-box').classList.add('battle-shake');
     setTimeout(() => {
@@ -693,12 +767,6 @@ function renderInventory() {
         if(state.inventory[k] > 0) h += `<div style="display:inline-block; background:#333; padding:2px 5px; margin:2px; font-size:0.7rem;">${k} x${state.inventory[k]}</div>`;
     }
     document.getElementById('inventory').innerHTML = h || "Empty";
-}
-
-function flashScreen() {
-    let f = document.querySelector('.battle-flash');
-    f.style.opacity = 0.5;
-    setTimeout(() => f.style.opacity = 0, 300);
 }
 
 function toggleMusic() {
